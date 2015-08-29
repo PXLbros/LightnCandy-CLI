@@ -1,0 +1,322 @@
+#!/usr/bin/env php
+<?php
+require __DIR__ . '/vendor/autoload.php';
+
+// Define STD helper functions
+function std_in()
+{
+    return fgets(STDIN);
+}
+
+function std_out($s)
+{
+    fwrite(STDOUT, $s);
+}
+
+function std_err($s)
+{
+    fwrite(STDERR, $s);
+}
+
+// Define Command line options
+$cmdOptions = new Commando\Command();
+
+$cmdOptions->argument()
+    ->describedAs('Path to template file to compile. If omitted will expect template as STDIN.')
+    ->file();
+
+$cmdOptions->option('o')
+    ->aka('output')
+    ->describedAs('File to output compiled template to.');
+
+$cmdOptions->option('b')
+    ->aka('basedir')
+    ->describedAs('Space seperated list of directory paths containing partial templates.');
+
+$cmdOptions->option('p')
+    ->aka('helpers')
+    ->describedAs('Space seperated list of directory paths containing helper functions.');
+
+$cmdOptions->option('k')
+    ->aka('blockhelpers')
+    ->describedAs('Space seperated list of directory paths containing block helper functions.');
+
+$cmdOptions->option('h')
+    ->aka('hbhelpers')
+    ->describedAs('Space seperated list of directory paths containing handlebars style helper functions.')
+    ->needs("FLAG_HANDLEBARSJS");
+
+$cmdOptions->option('e')
+    ->aka('fileext')
+    ->describedAs('Space seperated list of file extensions for template files.');
+
+$cmdOptions->option('r')
+    ->aka('render')
+    ->describedAs('Output will be rendered HTML instead of compiled template')
+    ->boolean();
+
+$cmdOptions->option('d')
+    ->aka('data')
+    ->describedAs('Data to pass to rendering function in JSON format')
+    ->needs('render');
+
+// LightnCandy Flags
+$cmdOptions->option('FLAG_ERROR_LOG')
+    ->describedAs('error_log() when found any template error.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_ERROR_EXCEPTION')
+    ->describedAs('throw exception when found any template error.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_ERROR_SKIPPARTIAL')
+    ->describedAs('skip "partial not found" error/exception. Use this to align with mustache specification.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_NOESCAPE')
+    ->describedAs('do not do any HTML escape on {{var}}.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_STANDALONE')
+    ->describedAs('generate stand-alone PHP codes, which can be execute without including LightnCandy.php. The compiled PHP code will contain scoped user function, somehow larger. And, the performance of the template will slow 1 ~ 10%.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_JSTRUE')
+    ->describeAs('generate \'true\' or \'false\' when value is true or false (JavaScript behavior). Otherwise, true/false will generate \'\'.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_JSOBJECT')
+    ->describedAs('generate \'[object Object]\' for associated array, generate \',\' separated values for array (JavaScript behavior). Otherwise, all PHP array will generate \'\' or \'Array\'.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_THIS')
+    ->describedAs('resolve {{this}} as {{.}} in template. Otherwise, {{this}} will be resolved as normal variable.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_WITH')
+    ->describedAs('support {{#with var}} in template. Otherwise, {{#with var}} will cause template error.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_PARENT')
+    ->describedAs('support {{../var}} in template. Otherwise, {{../var}} will cause template error.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_JSQUOTE')
+    ->describedAs('escape \' to &#x27; , ` to &#x60; . Otherwise, \' will be escaped to &#039; , ` will not be touched.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_ADVARNAME')
+    ->describedAs('support {{foo.[0].[#te#st].bar}} style advanced variable naming in template. Use this flag if you wanna use "some string" or (subexpresssion) as argument.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_NAMEDARG')
+    ->describedAs('support named arguments for custom helper {{helper name1=val1 nam2=val2 ...}}.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_EXTHELPER')
+    ->describedAs('do not including custom helper codes into compiled PHP codes. This reduces the code size, but you need to take care of your helper functions when rendering. If you forget to include required functions when execute rendering function, undefined function runtime error will be triggered. NOTE: Anonymous functions will always be placed into generated codes.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_RUNTIMEPARTIAL')
+    ->describedAs('compile partial as runtime function, This enables recursive partials or context change for partials.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_SLASH')
+    ->describedAs('Skip a delimiter when it behind \ .')
+    ->boolean();
+
+$cmdOptions->option('FLAG_ELSE')
+    ->describedAs('support {{else}} or {{^}} as handlebars specification. Otherwise, {{else}} will be resolved as normal variable , and {{^}} will cause template error.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_RAWBLOCK')
+    ->describedAs(' support {{{{raw_block}}} any char or {{foo}} as none parsed raw string {{{{/raw_block}}}}.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_PROPERTY')
+    ->describedAs('support object instance attribute access. You MUST apply this if your data contains object. And, the rendering performance will be worse.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_METHOD')
+    ->describedAs('support object instance method access. You MUST apply this if your data contains object. And, the rendering performance will be worse.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_INSTANCE')
+    ->describedAs('same with FLAG_PROPERTY + FLAG_METHOD')
+    ->boolean();
+
+$cmdOptions->option('FLAG_SPACECTL')
+    ->describedAs('support space control {{~ }} or {{ ~}} in template. Otherwise, {{~ }} or {{ ~}} will cause template error.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_SPVARS')
+    ->describedAs('support special variables include @root, @index, @key, @first, @last. Otherwise, compile these variable names with default parsing logic.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_JS')
+    ->describedAs('simulate all JavaScript string conversion behavior, same with FLAG_JSTRUE + FLAG_JSOBJECT.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_HANDLEBARS')
+    ->describedAs('support all handlebars extensions (which mustache do not supports) , same with FLAG_THIS + FLAG_WITH + FLAG_PARENT + FLAG_JSQUOTE + FLAG_ADVARNAME + FLAG_NAMEDARG + FLAG_SLASH + FLAG_ELSE + FLAG_RAWBLOCK + FLAG_MUSTACHESP + FLAG_MUSTACHEPAIN.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_HANDLEBARSJS')
+    ->describedAs('align with handlebars.js behaviors, same with FLAG_JS + FLAG_HANDLEBARS.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_MUSTACHESP')
+    ->describedAs('align line change and spacing behaviors with mustache specification.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_MUSTACHELOOKUP')
+    ->describedAs('align recursive lookup up behaviors with mustache specification. And, the rendering performance will be worse.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_MUSTACHEPAIN')
+    ->describedAs('align partial indent behavior with mustache specification.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_MUSTACHE')
+    ->describedAs('support all mustache specification, same with FLAG_ERROR_SKIPPARTIAL + FLAG_MUSTACHESP + FLAG_MUSTACHELOOKUP + FLAG_MUSTACHEPAIN.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_ECHO')
+    ->describedAs('compile to echo \'a\', $b, \'c\'; to improve performance. This will slow down rendering when the template and data are simple, but will improve 1% ~ 7% when the data is big and looping in the template.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_BESTPERFORMANCE')
+    ->describedAs('same with FLAG_ECHO now. This flag may be changed base on performance testing result in the future.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_RENDER_DEBUG')
+    ->describedAs('generate debug template to show error when rendering. With this flag, the performance of rendering may be slowed.')
+    ->boolean();
+
+$cmdOptions->option('FLAG_BARE')
+    ->describedAs('generate PHP code without PHP tags <?php and ?>')
+    ->boolean();
+
+$flags = 0;
+
+if($cmdOptions['FLAG_ERROR_LOG']){$flags |= LightnCandy::FLAG_ERROR_LOG;}
+if($cmdOptions['FLAG_ERROR_EXCEPTION']){$flags |= LightnCandy::FLAG_ERROR_EXCEPTION;}
+if($cmdOptions['FLAG_ERROR_SKIPPARTIAL']){$flags |= LightnCandy::FLAG_ERROR_SKIPPARTIAL;}
+if($cmdOptions['FLAG_NOESCAPE']){$flags |= LightnCandy::FLAG_NOESCAPE;}
+if($cmdOptions['FLAG_STANDALONE']){$flags |= LightnCandy::FLAG_STANDALONE;}
+if($cmdOptions['FLAG_JSTRUE']){$flags |= LightnCandy::FLAG_JSTRUE;}
+if($cmdOptions['FLAG_JSOBJECT']){$flags |= LightnCandy::FLAG_JSOBJECT;}
+if($cmdOptions['FLAG_THIS']){$flags |= LightnCandy::FLAG_THIS;}
+if($cmdOptions['FLAG_WITH']){$flags |= LightnCandy::FLAG_WITH;}
+if($cmdOptions['FLAG_PARENT']){$flags |= LightnCandy::FLAG_PARENT;}
+if($cmdOptions['FLAG_JSQUOTE']){$flags |= LightnCandy::FLAG_JSQUOTE;}
+if($cmdOptions['FLAG_ADVARNAME']){$flags |= LightnCandy::FLAG_ADVARNAME;}
+if($cmdOptions['FLAG_NAMEDARG']){$flags |= LightnCandy::FLAG_NAMEDARG;}
+if($cmdOptions['FLAG_EXTHELPER']){$flags |= LightnCandy::FLAG_EXTHELPER;}
+if($cmdOptions['FLAG_RUNTIMEPARTIAL']){$flags |= LightnCandy::FLAG_RUNTIMEPARTIAL;}
+if($cmdOptions['FLAG_SLASH']){$flags |= LightnCandy::FLAG_SLASH;}
+if($cmdOptions['FLAG_ELSE']){$flags |= LightnCandy::FLAG_ELSE;}
+if($cmdOptions['FLAG_RAWBLOCK']){$flags |= LightnCandy::FLAG_RAWBLOCK;}
+if($cmdOptions['FLAG_PROPERTY']){$flags |= LightnCandy::FLAG_PROPERTY;}
+if($cmdOptions['FLAG_METHOD']){$flags |= LightnCandy::FLAG_METHOD;}
+if($cmdOptions['FLAG_INSTANCE']){$flags |= LightnCandy::FLAG_INSTANCE;}
+if($cmdOptions['FLAG_SPACECTL']){$flags |= LightnCandy::FLAG_SPACECTL;}
+if($cmdOptions['FLAG_SPVARS']){$flags |= LightnCandy::FLAG_SPVARS;}
+if($cmdOptions['FLAG_JS']){$flags |= LightnCandy::FLAG_JS;}
+if($cmdOptions['FLAG_HANDLEBARS']){$flags |= LightnCandy::FLAG_HANDLEBARS;}
+if($cmdOptions['FLAG_HANDLEBARSJS']){$flags |= LightnCandy::FLAG_HANDLEBARSJS;}
+if($cmdOptions['FLAG_MUSTACHESP']){$flags |= LightnCandy::FLAG_MUSTACHESP;}
+if($cmdOptions['FLAG_MUSTACHELOOKUP']){$flags |= LightnCandy::FLAG_MUSTACHELOOKUP;}
+if($cmdOptions['FLAG_MUSTACHEPAIN']){$flags |= LightnCandy::FLAG_MUSTACHEPAIN;}
+if($cmdOptions['FLAG_MUSTACHE']){$flags |= LightnCandy::FLAG_MUSTACHE;}
+if($cmdOptions['FLAG_ECHO']){$flags |= LightnCandy::FLAG_ECHO;}
+if($cmdOptions['FLAG_BESTPERFORMANCE']){$flags |= LightnCandy::FLAG_BESTPERFORMANCE;}
+if($cmdOptions['FLAG_RENDER_DEBUG']){$flags |= LightnCandy::FLAG_RENDER_DEBUG;}
+if($cmdOptions['FLAG_BARE']){$flags |= LightnCandy::FLAG_BARE;}
+
+// Define options array
+$options = array();
+
+if($flags)
+{
+    $options['flags'] = $flags;
+}
+
+if($cmdOptions['basedir'])
+{
+    $options['basedir'] = array_map("realpath", explode(" ", $cmdOptions['basedir']));
+}
+
+if($cmdOptions['fileext'])
+{
+    $options['fileext'] = explode(" ", $cmdOptions['fileext']);
+}
+
+function setHelpers($helperName)
+{
+    $dirsToInclude = array_map("realpath", explode(" ", $cmdOptions[$helperName]));
+    $options[$helperName] = array();
+
+    foreach($dirsToInclude as $dir)
+    {
+        $files = array_diff(scandir($dir), array('..', '.'));
+
+        foreach($files as $file)
+        {
+            $file = $dir . DIRECTORY_SEPARATOR . $file;
+            $options[$helperName][basename($file, ".php")] = include($file);
+        }
+    }
+}
+
+if($cmdOptions['helpers'])
+{
+    setHelpers('helpers');
+}
+
+if($cmdOptions['blockhelpers'])
+{
+    setHelpers('blockhelpers');
+}
+
+if($cmdOptions['hbhelpers'])
+{
+    setHelpers('hbhelpers');
+}
+
+// Compile Template
+$template = "";
+if($cmdOptions[0])
+{
+    $template = file_get_contents($cmdOptions[0]);
+} else {
+    $template = stream_get_contents(STDIN);
+}
+
+if(!empty($template))
+{
+    $output = "";
+
+    if($cmdOptions['render'])
+    {
+        $options['flags'] |= LightnCandy::FLAG_BARE;
+
+        $compiledTemplate = LightnCandy::compile($template, $options);
+        $renderer = eval($compiledTemplate);
+
+        $data = $cmdOptions['data'] ? json_decode($cmdOptions['data'], true) : array();
+        $output = $renderer($data);
+    } else {
+        $compiledTemplate = LightnCandy::compile($template, $options);
+        $output = $compiledTemplate;
+    }
+
+    if($cmdOptions['output'])
+    {
+        file_put_contents($cmdOptions['output'], $output);
+    } else {
+        std_out($output);
+    }
+}
+
+exit(0);

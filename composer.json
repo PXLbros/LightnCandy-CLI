@@ -1,5 +1,6 @@
 {
     "require": {
+        "nategood/commando": "*",
         "zordius/lightncandy": "dev-master"
     }
 }
