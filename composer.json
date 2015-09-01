@@ -1,5 +1,5 @@
 {
-    "name": "PXLbros/LightnCandy-CLI",
+    "name": "pxlbros/LightnCandy-CLI",
     "description": "A PHP CLI wrapper for the mustache/handlebars PHP implementation lightncandy to aiding build processes.",
     "homepage": "https://github.com/PXLbros/LightnCandy-CLI",
     "authors": [
