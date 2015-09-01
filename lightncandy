@@ -31,6 +31,7 @@ $cmdOptions->option('o')
 
 $cmdOptions->option('b')
     ->aka('basedir')
+    ->aka('partials')
     ->describedAs('Space seperated list of directory paths containing partial templates.');
 
 $cmdOptions->option('p')
@@ -254,6 +255,8 @@ if($cmdOptions['fileext'])
 
 function setHelpers($helperName)
 {
+    global $cmdOptions;
+    global $options;
     $dirsToInclude = array_map("realpath", explode(" ", $cmdOptions[$helperName]));
     $options[$helperName] = array();
 
@@ -292,6 +295,8 @@ if($cmdOptions[0])
 } else {
     $template = stream_get_contents(STDIN);
 }
+
+//std_out("TEMPLATE: " . $template);
 
 if(!empty($template))
 {
