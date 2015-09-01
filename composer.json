@@ -1,4 +1,6 @@
 {
+    "name": "PXLbros/LightnCandy-CLI",
+    "description": "A PHP CLI wrapper for the mustache/handlebars PHP implementation lightncandy to aiding build processes.",
     "require": {
         "nategood/commando": "*",
         "zordius/lightncandy": "dev-master"
