@@ -15,6 +15,6 @@
     ],
     "require": {
         "nategood/commando": "*",
-        "zordius/lightncandy": "dev-master"
+        "zordius/lightncandy": "*"
     }
 }
