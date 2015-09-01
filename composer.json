@@ -2,6 +2,7 @@
     "name": "pxlbros/lightncandy-cli",
     "description": "A PHP CLI wrapper for the mustache/handlebars PHP implementation lightncandy to aid build processes.",
     "homepage": "https://github.com/PXLbros/LightnCandy-CLI",
+    "minimum-stability": "dev",
     "authors": [
         {
             "name": "Ian Williams",
