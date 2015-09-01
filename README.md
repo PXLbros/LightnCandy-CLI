@@ -4,6 +4,7 @@ LightnCandy-CLI is a CLI wrapper around the PHP implementation of mustache/handl
 ## Installation
 LightnCandy-CLI is meant to be used as a CLI tool and can be globally installed with composer like so:
 `composer global require pxlbros/lightncandy-cli`
+Make sure you have `~/.composer/vendor/bin/` in your path.
 
 You can also install LightnCandy-CLI into your project directory and run it straight from the vendor folder if you want to.
 
