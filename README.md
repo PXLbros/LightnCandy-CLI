@@ -31,23 +31,30 @@ You can also use `$ lightncandy --help` to see a list of availible options and t
 
 ### Other Options
 
-#### basedir `-b/--basedir "path/to/partials/directory/ path/to/different/dir"`
+#### basedir
+`-b/--basedir "path/to/partials/directory/ path/to/different/dir"`
 Space seperted list of directory paths containing partial templates.
 
-#### helpers `-p/--helpers "path/to/helpers/directory/ path/to/different/dir"`
+#### helpers
+`-p/--helpers "path/to/helpers/directory/ path/to/different/dir"`
 Space seperated list of directory paths containing helper functions.
 
-#### blockhelpers `-k/--blockhelpers "path/to/blockhelpers/directory/ path/to/different/dir"`
+#### blockhelpers
+`-k/--blockhelpers "path/to/blockhelpers/directory/ path/to/different/dir"`
 Space seperated list of directory paths containing block helper functions.
 
-#### hbhelpers `-h/--hbhelpers "path/to/hbhelpers/directory/ path/to/different/dir"`
+#### hbhelpers
+`-h/--hbhelpers "path/to/hbhelpers/directory/ path/to/different/dir"`
 Space seperated list of directory paths containing handlebars style helper functions.
 
-#### fileext `-e/--fileext ".tmpl .partial"`
+#### fileext
+`-e/--fileext ".tmpl .partial"`
 Space seperated list of file extensions for template files.
 
-#### render `-r/--render`
+#### render
+`-r/--render`
 If provided, will run the compiled template and will output the result instead.
 
-#### data `-d/--data`
+#### data
+`-d/--data`
 JSON string to pass to the rendering function if the render flag is provided.
