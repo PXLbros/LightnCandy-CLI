@@ -59,3 +59,7 @@ If provided, will run the compiled template and will output the result instead.
 #### data
 `-d/--data`
 JSON string to pass to the rendering function if the render flag is provided.
+
+#### compress
+`-c/--compress`
+Compress the output to reduce file size by around 30%.
