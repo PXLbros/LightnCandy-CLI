@@ -8,6 +8,9 @@ foreach (array(__DIR__ . '/../../autoload.php', __DIR__ . '/../vendor/autoload.p
     }
 }
 
+require __DIR__ . '/bin/compress.php';
+require __DIR__ . '/libs/min/lib/Minify/HTML.php';
+
 // Define STD helper functions
 function std_in()
 {
@@ -59,13 +62,18 @@ $cmdOptions->option('e')
 
 $cmdOptions->option('r')
     ->aka('render')
-    ->describedAs('Output will be rendered HTML instead of compiled template')
+    ->describedAs('Output will be rendered HTML instead of compiled template.')
     ->boolean();
 
 $cmdOptions->option('d')
     ->aka('data')
-    ->describedAs('Data to pass to rendering function in JSON format')
+    ->describedAs('Data to pass to rendering function in JSON format.')
     ->needs('render');
+
+$cmdOptions->option('c')
+    ->aka('compress')
+    ->describedAs('Compress template output.')
+    ->boolean();
 
 // LightnCandy Flags
 $cmdOptions->option('FLAG_ERROR_LOG')
@@ -302,11 +310,14 @@ if($cmdOptions[0])
     $template = stream_get_contents(STDIN);
 }
 
-//std_out("TEMPLATE: " . $template);
-
 if(!empty($template))
 {
     $output = "";
+
+    if($cmdOptions['compress'])
+    {
+        $template = Minify_HTML::minify($template);
+    }
 
     if($cmdOptions['render'])
     {
@@ -320,6 +331,14 @@ if(!empty($template))
     } else {
         $compiledTemplate = LightnCandy::compile($template, $options);
         $output = $compiledTemplate;
+        if($cmdOptions['compress'])
+        {
+            if($cmdOptions['FLAG_BARE'])
+            {
+                $output = "<?php " . $output;
+            }
+            $output = compress_php_src($output);
+        }
     }
 
     if($cmdOptions['output'])
