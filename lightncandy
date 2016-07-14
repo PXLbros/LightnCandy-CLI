@@ -8,6 +8,8 @@ foreach (array(__DIR__ . '/../../autoload.php', __DIR__ . '/../vendor/autoload.p
     }
 }
 
+use \LightnCandy\LightnCandy;
+
 require __DIR__ . '/bin/compress.php';
 require __DIR__ . '/libs/min/lib/Minify/HTML.php';
 
